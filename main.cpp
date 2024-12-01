@@ -104,7 +104,6 @@ GLuint LoadShader(const char* shaderPath, GLenum shaderType) {
 }
 // Funkcja do ładowania programu shaderów
 GLuint CreateShaderProgram(const char* vertexPath, const char* fragmentPath) {
-    GLuint vertexShader = LoadShader(vertexPath, GL_VERTEX_SHADER);
     GLuint fragmentShader = LoadShader(fragmentPath, GL_FRAGMENT_SHADER);
 
     GLuint shaderProgram = glCreateProgram();
