@@ -135,17 +135,21 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Obiekt.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Prostopadloscian.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Walec.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Obiekt.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Prostopadloscian.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="Walec.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="fragment_shader.glsl" />
-    <None Include="vertex_shader.glsl" />
+    <None Include="fs.shader" />
+    <None Include="vs.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

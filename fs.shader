@@ -14,27 +14,21 @@ out vec3 color;
 uniform sampler2D myTextureSampler;
 uniform mat4 MV;
 uniform vec3 LightPosition_worldspace;
-uniform vec3 LightColor;
-uniform vec3 MAC;
-uniform vec3 MSC;
 
 void main(){
 
 	// Light emission properties
 	// You'll probably want to put them as uniforms
-	vec3 LightColor = vec3(1,1,0.1);
-	float LightPower = 5000000.0f;
+	vec3 LightColor = vec3(1,1,1);
+	float LightPower = 5000000.0;
 	
 	// Material properties
 	vec3 MaterialDiffuseColor = vec3(1,1,1);
-	//vec3 MaterialAmbientColor = vec3(0.2,0.2,0.2) * MaterialDiffuseColor;
-	//vec3 MaterialSpecularColor = vec3(0.2,0.2,0.2);
-	vec3 MaterialAmbientColor = MAC * MaterialDiffuseColor;
-	vec3 MaterialSpecularColor = MSC;
-
+	vec3 MaterialAmbientColor = vec3(0.2,0.2,0.2) * MaterialDiffuseColor;
+	vec3 MaterialSpecularColor = vec3(0.2,0.2,0.2);
 
 	// Distance to the light
-	float distance = length( LightPosition_worldspace - Position_worldspace );
+	float distance = length(LightPosition_worldspace - Position_worldspace);
 
 	// Normal of the computed fragment, in camera space
 	vec3 n = normalize( Normal_cameraspace );

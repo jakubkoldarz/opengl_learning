@@ -9,6 +9,8 @@
 #include <string>
 #include "Obiekt.h"
 #include "Walec.h"
+#include "Shader.h"
+#include "Model.h"
 #include "Prostopadloscian.h"
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -17,17 +19,6 @@
 
 #define M_PI        3.14159265358979323846
 #define M_PI_2      1.57079632679489661923
-
-struct Vertex {
-    GLfloat x, y, z;
-};
-
-struct Model {
-    std::vector<Vertex> vertices;
-    std::vector<Vertex> normals;
-    std::vector<GLfloat> texCoords;  // Współrzędne tekstur
-    std::vector<GLuint> indices;     // Indeksy wierzchołków (trójkąty)
-};
 
 // Obsługa obracania obiektem
 static GLfloat xRot = 0.0f;
@@ -46,11 +37,11 @@ static GLfloat xCam;
 static GLfloat yCam;
 static GLfloat zCam;
 
-static Model world;
-static Model cube;
-//char path_world[] = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\surface.obj";
 char path_world[]   = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\surface_2.obj";
-char path_cube[]    = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\cube.obj";
+char path_car[]    = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\lazik.obj";
+
+static Model world(path_world);
+static Model car(path_car);
 
 static GLfloat cameraAngleX = 86.4f;     // Kąt w płaszczyźnie poziomej
 static GLfloat cameraAngleY = -49.5f;     // Kąt w pionie (wysokość)
@@ -68,67 +59,26 @@ static GLfloat grubosc_opony = 10.0f;
 static GLfloat dlugosc_oski = 30.0f;
 static GLfloat grubosc_oski = 5.0f;
 
-
 static GLfloat macVal = 0.5f;
 static GLfloat mscVal = 0.5f;
 
-GLuint MatrixID;
-GLuint ViewMatrixID;
-GLuint ModelMatrixID;
-GLuint LightID;
-GLuint LightColorID;
-GLuint MACID;
-GLuint MSCID;
+static Shader shader("vs.shader", "fs.shader");
 
-// Funkcja ładowania shaderów
-GLuint LoadShader(const char* shaderPath, GLenum shaderType) {
-    std::ifstream shaderFile(shaderPath);
-    std::stringstream shaderStream;
-    shaderStream << shaderFile.rdbuf();
-    std::string shaderSource = shaderStream.str();
-    const char* shaderCode = shaderSource.c_str();
+void GLClearError()
+{
+    while (glGetError() != GL_NO_ERROR);
+}
 
-    GLuint shader = glCreateShader(shaderType);
-    glShaderSource(shader, 1, &shaderCode, nullptr);
-    glCompileShader(shader);
-
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        std::cerr << "Shader compilation failed: " << infoLog << std::endl;
+void GLCheckError()
+{
+    while (GLenum error = glGetError())
+    {
+        char msg[50];
+        sprintf_s(msg, "[OpenGL Error] %d", error);
+        OutputDebugStringA(msg);
     }
-
-    return shader;
 }
-// Funkcja do ładowania programu shaderów
-GLuint CreateShaderProgram(const char* vertexPath, const char* fragmentPath) {
-    GLuint fragmentShader = LoadShader(fragmentPath, GL_FRAGMENT_SHADER);
 
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    GLint success;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-        std::cerr << "Shader program linking failed: " << infoLog << std::endl;
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return shaderProgram;
-}
-GLuint shaderProgram;
-void SetupShaders() {
-    shaderProgram = CreateShaderProgram("vertex_shader.glsl", "fragment_shader.glsl");
-    glUseProgram(shaderProgram);
-}
 void SetupPerspective(GLsizei width, GLsizei height) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -298,90 +248,7 @@ void ChangeSize(GLsizei w, GLsizei h)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
-bool LoadOBJ(const char* path, Model& model) {
-    std::ifstream file(path);
 
-    if (!file.is_open()) {
-        OutputDebugStringA("Nie można załadować pliku\n");
-        return false;
-    }
-    else
-    {
-        OutputDebugStringA("Wczytano plik\n");
-    }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        std::istringstream ss(line);
-        std::string prefix;
-        ss >> prefix;
-
-        if (prefix == "v") {  // Wierzchołek
-            Vertex v;
-            ss >> v.x >> v.y >> v.z;
-            model.vertices.push_back(v);
-        }
-        else if (prefix == "vn") {  // Normalna
-            Vertex vn;
-            ss >> vn.x >> vn.y >> vn.z;
-            model.normals.push_back(vn);
-        }
-        else if (prefix == "vt") {  // Współrzędne tekstur
-            GLfloat u, v;
-            ss >> u >> v;
-            model.texCoords.push_back(u);
-            model.texCoords.push_back(v);
-        }
-        else if (prefix == "f") {  // Tworzenie ścian (trójkątów)
-            GLuint idx[3], tex[3], norm[3];
-            char slash;
-            for (int i = 0; i < 3; i++) {
-                ss >> idx[i] >> slash >> tex[i] >> slash >> norm[i];
-                model.indices.push_back(idx[i] - 1);  // Indeksy w pliku .obj są 1-based
-            }
-        }
-    }
-
-    file.close();
-
-    float scaleFactor = 10.0f; // Przykładowy współczynnik skali
-
-    // Skalowanie wierzchołków w czasie ładowania modelu
-    for (auto& vertex : model.vertices) {
-        vertex.x *= scaleFactor;
-        vertex.y *= scaleFactor;
-        vertex.z *= scaleFactor;
-    }
-
-    return true;
-}
-void RenderModel(const Model& model) {
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-
-    glVertexPointer(3, GL_FLOAT, 0, model.vertices.data());
-    glNormalPointer(GL_FLOAT, 0, model.normals.data());
-
-    if (!model.texCoords.empty()) {
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, 0, model.texCoords.data());
-    }
-
-    try
-    {
-        glDrawElements(GL_TRIANGLES, model.indices.size(), GL_UNSIGNED_INT, model.indices.data());
-    }
-    catch (...)
-    {
-
-    }
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    if (!model.texCoords.empty()) {
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    }
-}
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg) {
@@ -427,49 +294,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
-//void Render(HWND hwnd) 
-//{
-//    // Wyczyść bufor koloru i głębi
-//    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//    glLoadIdentity();
-//
-//    // Obliczenie pozycji kamery na podstawie kątów
-//    xCam = cameraRadius * cosf(cameraAngleY) * sinf(cameraAngleX);
-//    yCam = cameraRadius * sinf(cameraAngleY);
-//    zCam = cameraRadius * cosf(cameraAngleY) * cosf(cameraAngleX);
-//
-//    GLfloat upY = (cosf(cameraAngleY) >= 0.0f) ? 1.0f : -1.0f;
-//
-//    gluLookAt(
-//        xCam, yCam, zCam,
-//        1.0f, 1.0f, 1.0f, // Punkt patrzenia
-//        0.0f, upY, 0.0f  // Wektor "góry"
-//    );
-//    
-//    // Przesunięcie w dół obiektu
-//    glTranslatef(0.0f, -30.0f, 0.0f);
-//
-//    glPushMatrix();
-//
-//    // Rysowanie obiektów
-//    //RysujObiekty();
-//
-//    GLuint modelLoc = glGetUniformLocation(shaderProgram, "model");
-//    GLuint viewLoc = glGetUniformLocation(shaderProgram, "view");
-//    GLuint projectionLoc = glGetUniformLocation(shaderProgram, "projection");
-//
-//
-//    RenderModel(model);
-//
-//    glPopMatrix();
-//    glFlush();
-//
-//    // Zamiana buforów
-//    HDC hdc = GetDC(hwnd);
-//    SwapBuffers(hdc);
-//    ReleaseDC(hwnd, hdc);
-//}
 void Render(HWND hwnd) {
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -497,18 +321,16 @@ void Render(HWND hwnd) {
     glm::mat4 ModelMatrix = glm::mat4(1.0);
     glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-    glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
-
+    glUniformMatrix4fv(shader.uniforms["MVP"], 1, GL_FALSE, &MVP[0][0]);
+    glUniformMatrix4fv(shader.uniforms["M"], 1, GL_FALSE, &ModelMatrix[0][0]);
+    glUniformMatrix4fv(shader.uniforms["V"], 1, GL_FALSE, &ViewMatrix[0][0]);
+    
     glm::vec3 lightPos = glm::vec3(LightPosX, LightPosY, LightPosZ);
-    glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
-    glUniform3f(MSCID, mscVal, mscVal, mscVal);
-    glUniform3f(MACID, macVal, macVal, macVal);
-
+    glUniform3f(shader.uniforms["LightPosition_worldspace"], lightPos.x, lightPos.y, lightPos.z);
+    
     // Rysowanie obiektu
-    RenderModel(world);
+    world.Render();
+    car.Render();
 
     glFlush();
 
@@ -572,26 +394,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 
     ChangeSize(1200, 700);
     
-    // Wczytanie z pliku
-    LoadOBJ(path_world, world);
-    LoadOBJ(path_cube, cube);
+    shader.Init();
 
-    // Shadery
-    shaderProgram = CreateShaderProgram("vertex_shader.glsl", "fragment_shader.glsl");
-
-    MatrixID = glGetUniformLocation(shaderProgram, "MVP");
-    ViewMatrixID = glGetUniformLocation(shaderProgram, "V");
-    ModelMatrixID = glGetUniformLocation(shaderProgram, "M");
-    LightID = glGetUniformLocation(shaderProgram, "LightPosition_worldspace");
-    LightColorID = glGetUniformLocation(shaderProgram, "LightColor");
-    MACID = glGetUniformLocation(shaderProgram, "MAC");
-    MSCID = glGetUniformLocation(shaderProgram, "MSC");
+    shader.AddUniformLocation("MVP");
+    shader.AddUniformLocation("V");
+    shader.AddUniformLocation("M");
+    shader.AddUniformLocation("LightPosition_worldspace");
 
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-        glUseProgram(shaderProgram);
+
+        glUseProgram(shader.GetProgramID());
+        
         Render(hwnd);
     }
 
