@@ -24,7 +24,11 @@
 static GLfloat xRot = 0.0f;
 static GLfloat yRot = 0.0f;
 
-static GLfloat LightPosY = 2500.0f;
+static GLfloat carPosX = 0.0f;
+static GLfloat carPosY = 0.0f;
+static GLfloat carPosZ = 0.0f;
+
+static GLfloat LightPosY = 7500.0f;
 static GLfloat LightPosX = 4.0f;
 static GLfloat LightPosZ = 4.0f;
 
@@ -37,11 +41,11 @@ static GLfloat xCam;
 static GLfloat yCam;
 static GLfloat zCam;
 
-char path_world[]   = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\surface_2.obj";
-char path_car[]    = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\lazik.obj";
+char path_world[]   = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\surface3.obj";
+char path_car[]    = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\crate.obj";
 
-static Model world(path_world);
-static Model car(path_car);
+static Model world(path_world, 2000);
+static Model car(path_car, 50);
 
 static GLfloat cameraAngleX = 86.4f;     // Kąt w płaszczyźnie poziomej
 static GLfloat cameraAngleY = -49.5f;     // Kąt w pionie (wysokość)
@@ -59,16 +63,12 @@ static GLfloat grubosc_opony = 10.0f;
 static GLfloat dlugosc_oski = 30.0f;
 static GLfloat grubosc_oski = 5.0f;
 
-static GLfloat macVal = 0.5f;
-static GLfloat mscVal = 0.5f;
-
 static Shader shader("vs.shader", "fs.shader");
 
 void GLClearError()
 {
     while (glGetError() != GL_NO_ERROR);
 }
-
 void GLCheckError()
 {
     while (GLenum error = glGetError())
@@ -78,7 +78,6 @@ void GLCheckError()
         OutputDebugStringA(msg);
     }
 }
-
 void SetupPerspective(GLsizei width, GLsizei height) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -251,6 +250,8 @@ void ChangeSize(GLsizei w, GLsizei h)
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    float carSpeed = 50.0f;
+
     switch (uMsg) {
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -258,25 +259,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         switch (wParam)
         {
+            // Sterowanie pojazdem
+        case 'S': carPosZ -= carSpeed; break; // Do przodu
+        case 'W': carPosZ += carSpeed; break; // Do tyłu
+        case 'D': carPosX -= carSpeed; break; // W lewo
+        case 'A': carPosX += carSpeed; break; // W prawo
+        case 'R': carPosY += carSpeed; break; // Do góry
+        case 'F': carPosY -= carSpeed; break; // W dół
+
             // Sterowanie kamerą
-        case 'A': cameraAngleX -= 0.05f; break;
-        case 'D': cameraAngleX += 0.05f; break;
-        case 'W': cameraAngleY += 0.05f; break;
-        case 'S': cameraAngleY -= 0.05f; break;
-        case 'Q': cameraRadius -= 50.0f;  break;
-        case 'E': cameraRadius += 50.0f; break;
+        case VK_UP:     cameraAngleY += 0.05f; break;
+        case VK_DOWN:   cameraAngleY -= 0.05f; break;
+        case VK_LEFT:   cameraAngleX -= 0.05f; break;
+        case VK_RIGHT:  cameraAngleX += 0.05f; break;
 
             // Sterowanie światłem
-        case VK_UP:     LightPosZ += 10.0f; break;
-        case VK_DOWN:   LightPosZ -= 10.0f; break;
-        case VK_LEFT:   LightPosX += 10.0f; break;
-        case VK_RIGHT:  LightPosX -= 10.0f; break;
         case 'O':       LightPosY += 50.0f; break;
         case 'P':       LightPosY -= 50.0f; break;
-        case 'N':       mscVal = mscVal >= 1.0f ? 1.0f : mscVal + 0.1f; break;
-        case 'M':       mscVal = mscVal <= 0.0f ? 0.0f : mscVal - 0.1f; break;
-        case 'K':       macVal = macVal >= 1.0f ? 1.0f : macVal + 0.1f; break;
-        case 'L':       macVal = macVal <= 0.0f ? 0.0f : macVal - 0.1f; break;
         }
 
         NormalizeAngle(cameraAngleX);
@@ -296,9 +295,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 void Render(HWND hwnd) {
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
+
+    glEnable(GL_TEXTURE_2D);
+    glActiveTexture(GL_TEXTURE0);
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wyświetlanie obrysu
 
@@ -309,27 +310,60 @@ void Render(HWND hwnd) {
 
     GLfloat upY = (cosf(cameraAngleY) >= 0.0f) ? 1.0f : -1.0f;
 
-    gluLookAt(
-        xCam, yCam, zCam,   // Pozycje kamery
-        1.0f, 1.0f, 1.0f,   // Punkt patrzenia
-        0.0f, upY, 0.0f     // Wektor "góry"
-    );
+    // Pozycja łazika
+    glm::vec3 roverPosition = glm::vec3(carPosX, carPosY, carPosZ);
 
-    // Wyszukiwanie uniformów w programie shaderów
+    // Wektor, który określa kierunek patrzenia kamery (np. wsteczny kierunek łazika)
+    //glm::vec3 cameraOffset = roverPosition * 50.0f;
+
+    // Ustawienie pozycji kamery (przesunięcie kamery o 'cameraOffset' w stosunku do łazika)
+    //glm::vec3 cameraPosition = roverPosition - cameraOffset;
+
+    // Ustawienie kamery, aby patrzyła na łazik
+    //glm::mat4 ViewMatrix = glm::lookAt(cameraPosition, roverPosition, glm::vec3(0, 1, 0));
+
+    // Ustawienie macierzy projekcji
     glm::mat4 ProjectionMatrix = glm::perspective(45.0f, 1200.0f / 700.0f, 0.1f, 100000.0f);
-    glm::mat4 ViewMatrix = glm::lookAt(glm::vec3(xCam, yCam, zCam), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, upY, 0.0f));
-    glm::mat4 ModelMatrix = glm::mat4(1.0);
-    glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+    //glm::mat4 ViewMatrix = glm::lookAt(glm::vec3(xCam, yCam, zCam), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, upY, 0.0f));
+    glm::mat4 ViewMatrix = glm::lookAt(glm::vec3(xCam, yCam, zCam), roverPosition, glm::vec3(0.0f, upY, 0.0f));
 
-    glUniformMatrix4fv(shader.uniforms["MVP"], 1, GL_FALSE, &MVP[0][0]);
-    glUniformMatrix4fv(shader.uniforms["M"], 1, GL_FALSE, &ModelMatrix[0][0]);
+    // Rysowanie świata (bez przesunięcia)
+    //glm::mat4 ModelMatrix_world = glm::mat4(1.0f); // brak przesunięcia dla świata
+    glm::mat4 ModelMatrix_world = glm::translate(glm::mat4(1.0f), glm::vec3(0, -200.0f, 0));
+    glm::mat4 MVP_world = ProjectionMatrix * ViewMatrix * ModelMatrix_world;
+
+    // Wysyłanie macierzy projekcji i widoku do shadera
+    glUniformMatrix4fv(shader.uniforms["MVP"], 1, GL_FALSE, &MVP_world[0][0]);
+    glUniformMatrix4fv(shader.uniforms["M"], 1, GL_FALSE, &ModelMatrix_world[0][0]);
     glUniformMatrix4fv(shader.uniforms["V"], 1, GL_FALSE, &ViewMatrix[0][0]);
     
+    // Ustawiamy pozycję światła
     glm::vec3 lightPos = glm::vec3(LightPosX, LightPosY, LightPosZ);
     glUniform3f(shader.uniforms["LightPosition_worldspace"], lightPos.x, lightPos.y, lightPos.z);
-    
-    // Rysowanie obiektu
+
+    // Ustawiamy kolor świata
+    //MaterialDiffuseColor
+    glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
+    glUniform3f(shader.uniforms["MaterialDiffuseColor"], color.x, color.y, color.z);
+
+    // Rysowanie świata
     world.Render();
+
+    // Poruszanie się łazikiem (pozycjonowanie pojazdu)
+    glm::mat4 ModelMatrix_car = glm::translate(glm::mat4(1.0f), glm::vec3(carPosX, carPosY, carPosZ)); 
+    glm::mat4 MVP_car = ProjectionMatrix * ViewMatrix * ModelMatrix_car;
+
+    // Wysyłanie zaktualizowanej macierzy do shadera dla samochodu
+    glUniformMatrix4fv(shader.uniforms["MVP"], 1, GL_FALSE, &MVP_car[0][0]);
+    glUniformMatrix4fv(shader.uniforms["M"], 1, GL_FALSE, &ModelMatrix_car[0][0]);
+    glUniformMatrix4fv(shader.uniforms["V"], 1, GL_FALSE, &ViewMatrix[0][0]);
+
+    glUniform1i(shader.uniforms["myTextureSampler"], 0);
+    // Ustawiamy kolor łazika
+    color = glm::vec3(1.0f, 0.0f, 0.0f);
+    glUniform3f(shader.uniforms["MaterialDiffuseColor"], color.x, color.y, color.z);
+
+    // Rysowanie przesuniętego łazika
     car.Render();
 
     glFlush();
@@ -338,7 +372,6 @@ void Render(HWND hwnd) {
     HDC hdc = GetDC(hwnd);
     SwapBuffers(hdc);
     ReleaseDC(hwnd, hdc);
-
 }
 void SetupOpenGL(HWND hwnd) 
 {
@@ -400,6 +433,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     shader.AddUniformLocation("V");
     shader.AddUniformLocation("M");
     shader.AddUniformLocation("LightPosition_worldspace");
+    shader.AddUniformLocation("MaterialDiffuseColor");
+    shader.AddUniformLocation("myTextureSampler");
 
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {

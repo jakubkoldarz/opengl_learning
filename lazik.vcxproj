@@ -145,6 +145,7 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="Prostopadloscian.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="Walec.h" />
   </ItemGroup>
   <ItemGroup>
