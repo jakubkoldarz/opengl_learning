@@ -25,7 +25,7 @@ void main(){
 	
 	// Material properties
 	// vec3 MaterialDiffuseColor = vec3(1,1,1);
-	vec3 MaterialDiffuseColor = texture(myTextureSampler, UV).rgb;
+	// vec3 MaterialDiffuseColor = texture(myTextureSampler, UV).rgb;
 	vec3 MaterialAmbientColor = vec3(0.2,0.2,0.2) * MaterialDiffuseColor;
 	vec3 MaterialSpecularColor = vec3(0.2,0.2,0.2);
 
@@ -61,5 +61,5 @@ void main(){
 		// Specular : reflective highlight, like a mirror
 		MaterialSpecularColor * LightColor * LightPower * pow(cosAlpha,5) / (distance*distance);
 
-    color = texture(myTextureSampler, UV).rgb;
+    // color = texture(myTextureSampler, UV).rgb;
 }

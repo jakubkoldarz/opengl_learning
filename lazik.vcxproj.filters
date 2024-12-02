@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="obj">
+      <UniqueIdentifier>{20030f17-6102-4875-a8be-cc03438b8efb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -57,5 +60,42 @@
   <ItemGroup>
     <None Include="fs.shader" />
     <None Include="vs.shader" />
+    <None Include="obj\crate.mtl">
+      <Filter>obj</Filter>
+    </None>
+    <None Include="obj\Lowpoly_tree_sample.mtl">
+      <Filter>obj</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="obj\crate.obj">
+      <Filter>obj</Filter>
+    </Object>
+    <Object Include="obj\cube.obj">
+      <Filter>obj</Filter>
+    </Object>
+    <Object Include="obj\lazik.obj">
+      <Filter>obj</Filter>
+    </Object>
+    <Object Include="obj\surface.obj">
+      <Filter>obj</Filter>
+    </Object>
+    <Object Include="obj\surface_2.obj">
+      <Filter>obj</Filter>
+    </Object>
+    <Object Include="obj\surface3.obj">
+      <Filter>obj</Filter>
+    </Object>
+    <Object Include="obj\szescian.obj">
+      <Filter>obj</Filter>
+    </Object>
+    <Object Include="obj\tree.obj">
+      <Filter>obj</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="obj\CubeTexture.jpg">
+      <Filter>obj</Filter>
+    </Image>
   </ItemGroup>
 </Project>
