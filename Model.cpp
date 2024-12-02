@@ -52,7 +52,7 @@ bool Model::getModelFromFile()
         {
             std::string mtl_path;
             ss >> mtl_path;
-            mtl_path = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\" + mtl_path;
+            mtl_path = "obj\\" + mtl_path;
             this->material_path = new char[mtl_path.length()];
             strcpy_s(this->material_path, mtl_path.length() + 1, mtl_path.c_str());
         }
@@ -97,7 +97,7 @@ bool Model::loadMTL() {
             if (currentMaterial) {
                 std::string textureFile;
                 ss >> textureFile;
-                textureFile = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\" + textureFile;
+                textureFile = "obj\\" + textureFile;
                 currentMaterial->textureFile = textureFile;
             }
         }

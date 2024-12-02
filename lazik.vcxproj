@@ -150,22 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="fs.shader" />
-    <None Include="obj\crate.mtl" />
-    <None Include="obj\Lowpoly_tree_sample.mtl" />
     <None Include="vs.shader" />
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="obj\crate.obj" />
-    <Object Include="obj\cube.obj" />
-    <Object Include="obj\lazik.obj" />
-    <Object Include="obj\surface.obj" />
-    <Object Include="obj\surface3.obj" />
-    <Object Include="obj\surface_2.obj" />
-    <Object Include="obj\szescian.obj" />
-    <Object Include="obj\tree.obj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="obj\CubeTexture.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -41,8 +41,8 @@ static GLfloat xCam;
 static GLfloat yCam;
 static GLfloat zCam;
 
-char path_world[]   = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\surface3.obj";
-char path_car[]    = "C:\\Users\\jakub\\Documents\\Studia\\Semestr 3\\Grafika Komputerowa\\Projekt\\obj\\crate.obj";
+char path_world[]   = "obj\\surface3.obj";
+char path_car[]    = "obj\\crate.obj";
 
 static Model world(path_world, 2000);
 static Model car(path_car, 50);
